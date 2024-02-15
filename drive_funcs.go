@@ -8,10 +8,28 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+const (
+	DRIVE_TYPE_UNKNOWN    = iota
+	DRIVE_TYPE_WRONG_PATH = iota
+	DRIVE_TYPE_REMOVABLE  = iota
+	DRIVE_TYPE_FIXED      = iota
+	DRIVE_TYPE_REMOTE     = iota
+	DRIVE_TYPE_CDROM      = iota
+	DRIVE_TYPE_RAMDISK    = iota
+)
+
+func get_drive_type(drivePath string) int {
+	utf16DrivePath, err := windows.UTF16FromString(drivePath)
+	noErr(err)
+	driveType := windows.GetDriveType(&utf16DrivePath[0])
+	return int(driveType)
+}
+
 func read_drive_sector(
 	drive string,
 	offset int64,
-) (result [512]byte, err error) {
+	sectorSize uint64,
+) (result []byte, err error) {
 	fileHandle := open_drive_file(drive)
 	defer windows.CloseHandle(fileHandle)
 	file, err := os.OpenFile(drive, os.O_RDONLY, os.ModeDevice)
@@ -20,7 +38,8 @@ func read_drive_sector(
 	}
 	defer file.Close()
 	file.Seek(offset, io.SeekStart)
-	readBytesCount, err := file.Read(result[:])
+	result = make([]byte, sectorSize)
+	readBytesCount, err := file.Read(result)
 	if err != nil {
 		return
 	}
