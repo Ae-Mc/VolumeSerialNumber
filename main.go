@@ -17,17 +17,9 @@ func main() {
 
 	for _, drive := range supportedDrives {
 		drive = fmt.Sprintf("\\\\.\\%c:", drive[0])
-		volumeExtents, err := get_volume_disk_extents(drive)
-		noErr(err)
-		if volumeExtents.NumberOfDiskExtents == 0 {
-			panic("number of disk extents is 0")
-		}
-		physicalDrive := fmt.Sprintf(
-			"\\\\.\\PHYSICALDRIVE%d", volumeExtents.Extents[0].DiskNumber,
-		)
 		content, err := read_drive_sector(
-			physicalDrive,
-			int64(volumeExtents.Extents[0].StartingOffset),
+			drive,
+			0,
 			512,
 		)
 		noErr(err)
