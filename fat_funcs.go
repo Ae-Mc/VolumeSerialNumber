@@ -14,8 +14,8 @@ const (
 	FAT_TYPE_EXFAT   = iota
 )
 
-func getFATType(firstDiskSector []byte) int {
-	reader := bytes.NewReader(firstDiskSector)
+func getFATType(firstDiskSector [512]byte) int {
+	reader := bytes.NewReader(firstDiskSector[:])
 	var BS_JmpBoot [3]byte
 	var BPB_BytsPerSec uint16
 	var BPB_SecPerClus uint8
@@ -29,6 +29,25 @@ func getFATType(firstDiskSector []byte) int {
 	var BPB_BootSign uint16
 
 	binary.Read(reader, binary.LittleEndian, BS_JmpBoot[:])
+	reader.Seek(510, io.SeekStart)
+	binary.Read(reader, binary.LittleEndian, &BPB_BootSign)
+
+	if bytes.Equal(BS_JmpBoot[:], []byte{0xEB, 0x76, 0x90}) &&
+		BPB_BootSign == 0xAA55 {
+		var fileSystemName [8]byte
+		reader.Seek(3, io.SeekStart)
+		binary.Read(reader, binary.LittleEndian, fileSystemName[:])
+		var mustBeZero, zero [53]byte
+		binary.Read(reader, binary.LittleEndian, mustBeZero)
+		if bytes.Equal(
+			fileSystemName[:],
+			[]byte{'E', 'X', 'F', 'A', 'T', ' ', ' ', ' '},
+		) &&
+			bytes.Equal(mustBeZero[:], zero[:]) {
+			return FAT_TYPE_EXFAT
+		}
+	}
+
 	reader.Seek(11, io.SeekStart)
 	binary.Read(reader, binary.LittleEndian, &BPB_BytsPerSec)
 	binary.Read(reader, binary.LittleEndian, &BPB_SecPerClus)
@@ -40,16 +59,6 @@ func getFATType(firstDiskSector []byte) int {
 	binary.Read(reader, binary.LittleEndian, &BPB_FATSz16)
 	reader.Seek(32, io.SeekStart)
 	binary.Read(reader, binary.LittleEndian, &BPB_TotSec32)
-	reader.Seek(510, io.SeekStart)
-	binary.Read(reader, binary.LittleEndian, &BPB_BootSign)
-
-	if bytes.Equal(BS_JmpBoot[:], []byte{0xEB, 0x76, 0x90}) {
-		var fileSystemName [8]byte
-		reader.Seek(3, io.SeekStart)
-		binary.Read(reader, binary.LittleEndian, fileSystemName[:])
-		var mustBeZero [53]byte
-		binary.Read(reader, binary.LittleEndian, mustBeZero)
-	}
 
 	if (BS_JmpBoot[0] != 0xE9 &&
 		!(BS_JmpBoot[0] == 0xEB && BS_JmpBoot[2] == 0x90)) ||
@@ -99,12 +108,15 @@ func getFATType(firstDiskSector []byte) int {
 	}
 }
 
-func isFAT12(firstDiskSector []byte) bool {
+func isFAT12(firstDiskSector [512]byte) bool {
 	return getFATType(firstDiskSector) == FAT_TYPE_FAT12
 }
-func isFAT16(firstDiskSector []byte) bool {
+func isFAT16(firstDiskSector [512]byte) bool {
 	return getFATType(firstDiskSector) == FAT_TYPE_FAT16
 }
-func isFAT32(firstDiskSector []byte) bool {
+func isFAT32(firstDiskSector [512]byte) bool {
 	return getFATType(firstDiskSector) == FAT_TYPE_FAT32
+}
+func isEXFAT(firstDiskSector [512]byte) bool {
+	return getFATType(firstDiskSector) == FAT_TYPE_EXFAT
 }

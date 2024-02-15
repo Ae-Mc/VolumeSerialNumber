@@ -33,14 +33,16 @@ func main() {
 		noErr(err)
 		fileSystemName := "unknown"
 		switch {
-		case isNTFS(content[:12]):
+		case isNTFS(content[:]):
 			fileSystemName = "NTFS"
-		case isFAT12(content):
+		case isFAT12([512]byte(content)):
 			fileSystemName = "FAT12"
-		case isFAT16(content):
+		case isFAT16([512]byte(content)):
 			fileSystemName = "FAT16"
-		case isFAT32(content):
+		case isFAT32([512]byte(content)):
 			fileSystemName = "FAT32"
+		case isEXFAT([512]byte(content)):
+			fileSystemName = "EXFAT"
 		}
 		fmt.Println("Drive", drive, "file system is", fileSystemName)
 	}
