@@ -6,36 +6,37 @@ import (
 )
 
 func main() {
-	drives := get_drives_list()
+	drives, err := getDrivesList(true)
+	noErr(err)
 
-	supportedDrives := Filter(drives, func(drive string) bool {
+	supported_drives := filter(drives, func(drive string) bool {
 		return slices.Contains(
 			[]int{DRIVE_TYPE_FIXED, DRIVE_TYPE_REMOVABLE},
-			get_drive_type(drive),
+			getDriveType(drive),
 		)
 	})
 
-	for _, drive := range supportedDrives {
+	for _, drive := range supported_drives {
 		drive = fmt.Sprintf("\\\\.\\%c:", drive[0])
-		content, err := read_drive_sector(
+		content, err := readDriveSector(
 			drive,
 			0,
 			512,
 		)
 		noErr(err)
-		fileSystemName := "unknown"
+		file_system_name := "unknown"
 		switch {
 		case isNTFS(content[:]):
-			fileSystemName = "NTFS"
+			file_system_name = "NTFS"
 		case isFAT12([512]byte(content)):
-			fileSystemName = "FAT12"
+			file_system_name = "FAT12"
 		case isFAT16([512]byte(content)):
-			fileSystemName = "FAT16"
+			file_system_name = "FAT16"
 		case isFAT32([512]byte(content)):
-			fileSystemName = "FAT32"
+			file_system_name = "FAT32"
 		case isEXFAT([512]byte(content)):
-			fileSystemName = "EXFAT"
+			file_system_name = "EXFAT"
 		}
-		fmt.Println("Drive", drive, "file system is", fileSystemName)
+		fmt.Println("Drive", drive, "file system is", file_system_name)
 	}
 }

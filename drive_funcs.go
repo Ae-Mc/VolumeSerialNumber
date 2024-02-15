@@ -18,14 +18,14 @@ const (
 	DRIVE_TYPE_RAMDISK    = iota
 )
 
-func get_drive_type(drivePath string) int {
+func getDriveType(drivePath string) int {
 	utf16DrivePath, err := windows.UTF16FromString(drivePath)
 	noErr(err)
 	driveType := windows.GetDriveType(&utf16DrivePath[0])
 	return int(driveType)
 }
 
-func read_drive_sector(
+func readDriveSector(
 	drive string,
 	offset int64,
 	sectorSize uint64,

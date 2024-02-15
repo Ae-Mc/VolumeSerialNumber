@@ -1,27 +1,28 @@
 package main
 
 import (
-	"sort"
+	"slices"
 	"strings"
 	"unicode/utf16"
 
 	"golang.org/x/sys/windows"
 )
 
-func get_drives_list() (drivesList []string) {
-	var logicalDrives [256]uint16
-	_, err := windows.GetLogicalDriveStrings(
-		uint32(cap(logicalDrives)),
-		&logicalDrives[0],
+func getDrivesList(should_sort bool) (drives_list []string, err error) {
+	var logical_drives [256]uint16
+	_, err = windows.GetLogicalDriveStrings(
+		uint32(cap(logical_drives)),
+		&logical_drives[0],
 	)
-	noErr(err)
-	drivesList = strings.FieldsFunc(
-		strings.Trim(string(utf16.Decode(logicalDrives[:])), string(rune(0))),
-		func(r rune) bool { return r == 0 },
-	)
-	sort.Slice(
-		drivesList,
-		func(i, j int) bool { return drivesList[i] < drivesList[j] },
-	)
+	if err == nil {
+		drives_list = strings.FieldsFunc(
+			string(utf16.Decode(logical_drives[:])),
+			func(r rune) bool { return r == 0 },
+		)
+		drives_list = drives_list[:len(drives_list)-1]
+		if should_sort {
+			slices.Sort(drives_list)
+		}
+	}
 	return
 }
