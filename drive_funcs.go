@@ -30,8 +30,6 @@ func read_drive_sector(
 	offset int64,
 	sectorSize uint64,
 ) (result []byte, err error) {
-	fileHandle := open_drive_file(drive)
-	defer windows.CloseHandle(fileHandle)
 	file, err := os.OpenFile(drive, os.O_RDONLY, os.ModeDevice)
 	if err != nil {
 		return
@@ -43,7 +41,7 @@ func read_drive_sector(
 	if err != nil {
 		return
 	}
-	if readBytesCount != 512 {
+	if readBytesCount != int(sectorSize) {
 		err = fmt.Errorf(
 			"error reading sector, read %d bytes instead of 512",
 			readBytesCount,
