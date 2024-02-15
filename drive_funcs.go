@@ -50,19 +50,3 @@ func read_drive_sector(
 	}
 	return
 }
-
-func open_drive_file(drivePath string) windows.Handle {
-	driveUtf16, err := windows.UTF16FromString(drivePath)
-	noErr(err)
-	fileHandle, err := windows.CreateFile(
-		&driveUtf16[0],
-		windows.GENERIC_READ|windows.GENERIC_WRITE,
-		windows.FILE_SHARE_READ|windows.FILE_SHARE_WRITE,
-		nil,
-		windows.OPEN_EXISTING,
-		windows.FILE_FLAG_BACKUP_SEMANTICS,
-		windows.Handle(windows.GetShellWindow()),
-	)
-	noErr(err)
-	return fileHandle
-}
