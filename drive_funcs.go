@@ -1,4 +1,4 @@
-package volumeID
+package volumeSerialNumber
 
 import (
 	"fmt"
