@@ -8,7 +8,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"volumeID"
+
+	"github.com/Ae-Mc/volumeID"
 )
 
 func help() {

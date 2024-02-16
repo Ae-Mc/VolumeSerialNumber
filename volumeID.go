@@ -135,8 +135,8 @@ func SetVolumeSerialNumber(drive string, volume_sn uint64) (err error) {
 	} else {
 		binary.Write(&buf, binary.LittleEndian, volume_sn)
 	}
-	for i := addr; i < addr + size; i++ {
-		firstSector[i] = buf.Bytes()[i - addr]
+	for i := addr; i < addr+size; i++ {
+		firstSector[i] = buf.Bytes()[i-addr]
 	}
 	file_system, err := GetFileSystem([512]byte(firstSector))
 	if err != nil {
