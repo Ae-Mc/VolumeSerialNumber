@@ -29,3 +29,14 @@ func ReadDriveSector(
 	}
 	return
 }
+
+func WriteDriveSector(drive string, offset int64, sector []byte) (err error) {
+	file, err := os.OpenFile(drive, os.O_WRONLY, os.ModeDevice)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+	file.Seek(offset, io.SeekStart)
+	_, err = file.Write(sector)
+	return
+}
