@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"regexp"
-	"slices"
 	"strings"
 	"volumeID"
 )
@@ -102,10 +101,9 @@ func main() {
 	}
 	drive := fmt.Sprintf("\\\\.\\%c:", os.Args[1][0])
 	drive_type := volumeID.GetDriveType(drive + "\\")
-	is_supported := slices.Contains(
-		[]int{volumeID.DRIVE_TYPE_FIXED, volumeID.DRIVE_TYPE_REMOVABLE},
-		drive_type,
-	)
+
+	is_supported := drive_type == volumeID.DRIVE_TYPE_FIXED ||
+		drive_type == volumeID.DRIVE_TYPE_REMOVABLE
 	if !is_supported {
 		fmt.Println("Drive type", drive_type, "is unsupported")
 		fmt.Println(
