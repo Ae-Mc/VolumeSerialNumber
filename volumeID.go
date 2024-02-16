@@ -15,7 +15,14 @@ const (
 	FILE_SYSTEM_EXFAT = FAT_TYPE_EXFAT
 )
 
-func GetFileSystem(firstDiskSector [512]byte) (file_system int, err error) {
+func GetFileSystem(firstDiskSector []byte) (file_system int, err error) {
+	if len(firstDiskSector) < 512 {
+		err = fmt.Errorf(
+			"disk sector too small: %d, min size is 512",
+			len(firstDiskSector),
+		)
+		return
+	}
 	fat_type := getFATType(firstDiskSector)
 	if fat_type == FAT_TYPE_UNKNOWN {
 		if isNTFS(firstDiskSector[:]) {
@@ -29,9 +36,7 @@ func GetFileSystem(firstDiskSector [512]byte) (file_system int, err error) {
 	return
 }
 
-func GetVolumeSerialNumberSize(
-	firstDiskSector [512]byte,
-) (size int64, err error) {
+func GetVolumeSerialNumberSize(firstDiskSector []byte) (size int64, err error) {
 	sizes := map[int]int64{
 		FILE_SYSTEM_NTFS: 8,
 		FAT_TYPE_FAT12:   4,
@@ -45,9 +50,7 @@ func GetVolumeSerialNumberSize(
 	return
 }
 
-func GetVolumeSerialNumberAddr(
-	firstDiskSector [512]byte,
-) (addr int64, err error) {
+func GetVolumeSerialNumberAddr(firstDiskSector []byte) (addr int64, err error) {
 	addrs := map[int]int64{
 		FILE_SYSTEM_NTFS: 0x48,
 		FAT_TYPE_FAT12:   0x27,
@@ -62,12 +65,12 @@ func GetVolumeSerialNumberAddr(
 }
 
 func getVolumeSerialNumberAddrAndSize(
-	firstDiskSector [512]byte,
+	firstDiskSector []byte,
 ) (addr, size int64, err error) {
-	if addr, err = GetVolumeSerialNumberAddr([512]byte(firstDiskSector)); err != nil {
+	if addr, err = GetVolumeSerialNumberAddr(firstDiskSector); err != nil {
 		return
 	}
-	size, err = GetVolumeSerialNumberSize([512]byte(firstDiskSector))
+	size, err = GetVolumeSerialNumberSize(firstDiskSector)
 	return
 }
 
@@ -76,7 +79,7 @@ func GetVolumeSerialNumber(drive string) (volume_sn uint64, err error) {
 	if firstSector, err = ReadDriveSector(drive, 0, 512); err != nil {
 		return
 	}
-	addr, size, err := getVolumeSerialNumberAddrAndSize([512]byte(firstSector))
+	addr, size, err := getVolumeSerialNumberAddrAndSize(firstSector)
 	if err != nil {
 		return
 	}
@@ -108,11 +111,10 @@ func fillExFATAdditionalSectors(drive string, sector_size uint64) (err error) {
 	checksum_sector := make([]byte, sector_size)
 	var buf bytes.Buffer
 	binary.Write(&buf, binary.LittleEndian, checksum)
-	checksum_sector = bytes.ReplaceAll(
-		checksum_sector,
-		[]byte{0, 0, 0, 0},
-		buf.Bytes(),
-	)
+	var checksum_bytes = buf.Bytes()
+	for i := uint64(0); i < sector_size; i++ {
+		checksum_sector[i] = checksum_bytes[i%4]
+	}
 	WriteDriveSector(drive, int64(sector_size)*12, sectors)
 	WriteDriveSector(drive, int64(sector_size)*11, checksum_sector)
 	WriteDriveSector(drive, int64(sector_size)*23, checksum_sector)
@@ -124,7 +126,7 @@ func SetVolumeSerialNumber(drive string, volume_sn uint64) (err error) {
 	if firstSector, err = ReadDriveSector(drive, 0, 512); err != nil {
 		return
 	}
-	addr, size, err := getVolumeSerialNumberAddrAndSize([512]byte(firstSector))
+	addr, size, err := getVolumeSerialNumberAddrAndSize(firstSector)
 	if err != nil {
 		return
 	}
@@ -138,7 +140,7 @@ func SetVolumeSerialNumber(drive string, volume_sn uint64) (err error) {
 	for i := addr; i < addr+size; i++ {
 		firstSector[i] = buf.Bytes()[i-addr]
 	}
-	file_system, err := GetFileSystem([512]byte(firstSector))
+	file_system, err := GetFileSystem(firstSector)
 	if err != nil {
 		return
 	}

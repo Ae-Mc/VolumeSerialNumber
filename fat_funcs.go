@@ -15,7 +15,7 @@ const (
 	FAT_TYPE_EXFAT   = iota
 )
 
-func getFATType(firstDiskSector [512]byte) int {
+func getFATType(firstDiskSector []byte) int {
 	reader := bytes.NewReader(firstDiskSector[:])
 	var BS_JmpBoot [3]byte
 	var BPB_BytsPerSec uint16
