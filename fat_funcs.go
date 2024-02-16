@@ -3,6 +3,7 @@ package volumeID
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io"
 )
 
@@ -108,15 +109,28 @@ func getFATType(firstDiskSector [512]byte) int {
 	}
 }
 
-func isFAT12(firstDiskSector [512]byte) bool {
-	return getFATType(firstDiskSector) == FAT_TYPE_FAT12
-}
-func isFAT16(firstDiskSector [512]byte) bool {
-	return getFATType(firstDiskSector) == FAT_TYPE_FAT16
-}
-func isFAT32(firstDiskSector [512]byte) bool {
-	return getFATType(firstDiskSector) == FAT_TYPE_FAT32
-}
-func isEXFAT(firstDiskSector [512]byte) bool {
-	return getFATType(firstDiskSector) == FAT_TYPE_EXFAT
+func exFatChecksum(
+	sectors []byte,
+	bytes_per_sector uint16,
+) (checksum uint32, err error) {
+	number_of_bytes := uint32(bytes_per_sector) * 11
+	if len(sectors) < int(number_of_bytes) {
+		err = fmt.Errorf("sectors not read in memory completely")
+		return
+	}
+
+	for i := uint32(0); i < number_of_bytes; i++ {
+		if (i == 106) || (i == 107) || (i == 112) {
+			continue
+		}
+		var x uint32
+		if checksum&1 == 1 {
+			x = 0x80000000
+		} else {
+			x = 0
+		}
+		checksum = x + (checksum >> 1) + uint32(sectors[i])
+	}
+
+	return
 }
