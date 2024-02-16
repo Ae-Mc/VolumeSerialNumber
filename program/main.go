@@ -13,15 +13,16 @@ import (
 )
 
 func help() {
-	fmt.Println("Wrong number of arguments")
-	fmt.Println("Examples of usage to change volume serial number:")
-	fmt.Println("\t", os.Args[0], "C: 5678-9ABC")
-	fmt.Println(
-		"Above command changes volume serial number of drive C to 0000-0000-5678-9ABC if C is NTFS volume or to 5678-9ABC if C is FAT12/FAT16/FAT32/EXFAT volume",
+	fmt.Println(`Examples of usage to change volume serial number:
+	` + os.Args[0] + ` C: 5678-9ABC
+Above command changes volume serial number of drive C to 0000-0000-5678-9ABC if C is NTFS volume or to 5678-9ABC if C is FAT12/FAT16/FAT32/EXFAT volume
+It's also possible to change NTFS volume serial number to full 8 byte value:
+	` + os.Args[0] + ` C: 1234-CDEF-5678-9ABC
+If C is FAT32 (or similar file system) volume, than it's serial will be changed to 5678-9ABC
+Examples of usage to get volume serial number:
+	` + os.Args[0] + ` C:
+Possible output of above command is 1234-AB12`,
 	)
-	fmt.Println("Examples of usage to get volume serial number:")
-	fmt.Println("\t", os.Args[0], "C:")
-	fmt.Println("Possible output of above command is 1234-AB12")
 }
 
 func serialNumberToString(volume_sn uint64) string {
